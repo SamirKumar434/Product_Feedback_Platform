@@ -30,3 +30,26 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+//fetching all post by a user
+export async function GET() {
+  try {
+    const posts = await prisma.post.findMany({
+      include: {
+        author: true,
+        votes: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return NextResponse.json(posts);
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+      },
+      { status: 500 },
+    );
+  }
+}
