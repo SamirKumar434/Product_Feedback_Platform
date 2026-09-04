@@ -37,7 +37,10 @@ export const CATEGORIES = {
     icon: Lightbulb,
   },
 } as const;
+
 export type CategoryType = keyof typeof CATEGORIES;
+
+export const CATEGORIES_TYPES = Object.keys(CATEGORIES) as CategoryType[];
 
 export function getCategoryDesign(
   category: string,

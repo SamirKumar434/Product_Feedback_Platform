@@ -3,7 +3,6 @@ import prisma from "./prisma";
 
 export async function syncCurrentUser() {
   try {
-    // Get user data from clerk
     const clerkUser = await currentUser();
 
     if (!clerkUser) {
@@ -15,12 +14,12 @@ export async function syncCurrentUser() {
     if (!email) {
       throw new Error("User email not found");
     }
-    //Check if User exsists in db
+
     let dbUser = await prisma.user.findUnique({
       where: { clerkUserId: clerkUser.id },
     });
+
     if (dbUser) {
-      // Update existing user
       dbUser = await prisma.user.update({
         where: { id: dbUser.id },
         data: {
@@ -30,9 +29,6 @@ export async function syncCurrentUser() {
         },
       });
     } else {
-      // Create a new user in database
-      // Check if this is the first user- make them admin
-
       const userCount = await prisma.user.count();
       const isFirstUser = userCount === 0;
 
@@ -40,16 +36,15 @@ export async function syncCurrentUser() {
         data: {
           clerkUserId: clerkUser.id,
           email,
-          name: `${clerkUser.firstName || ""} ${
-            clerkUser.lastName || ""
-          }`.trim(),
+          name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
           image: clerkUser.imageUrl,
           role: isFirstUser ? "ADMIN" : "USER",
         },
       });
       console.log(`New user created: ${email} with role: ${dbUser.role}`);
-      return dbUser;
     }
+
+    return dbUser; // ✅ single return covering both branches
   } catch (error) {
     console.error("Error syncing user from Clerk", error);
     throw error;
