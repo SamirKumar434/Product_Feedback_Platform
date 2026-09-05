@@ -20,7 +20,7 @@ export type Role = (typeof Role)[keyof typeof Role]
 export const PostStatus = {
   under_review: 'under_review',
   planned: 'planned',
-  in_progess: 'in_progess',
+  in_progress: 'in_progress',
   completed: 'completed',
   closed: 'closed'
 } as const

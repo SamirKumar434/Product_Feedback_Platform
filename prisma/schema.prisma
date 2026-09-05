@@ -50,7 +50,7 @@ enum Role {
 enum PostStatus {
   under_review
   planned
-  in_progess
+  in_progress
   completed
   closed
 }
