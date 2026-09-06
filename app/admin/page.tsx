@@ -1,4 +1,5 @@
 import { GradientHeader } from "@/components/gradient-header";
+import AdminFeedbackTable from "@/components/admin-feedback-table"; // adjust path/casing to match your actual file
 import prisma from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
@@ -17,6 +18,7 @@ export default async function AdminPage() {
   if (!user || user.role !== "ADMIN") {
     redirect("/");
   }
+
   const posts = await prisma.post.findMany({
     include: {
       author: true,
@@ -26,12 +28,16 @@ export default async function AdminPage() {
       createdAt: "desc",
     },
   });
+
   return (
     <div className="container mx-auto">
       <GradientHeader
         title="Admin Dashboard"
         subtitle="Manage feedbacks and update their status"
       />
+      <div className="mt-8">
+        <AdminFeedbackTable posts={posts} />
+      </div>
     </div>
   );
 }
