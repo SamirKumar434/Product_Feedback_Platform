@@ -1,5 +1,6 @@
 "use client";
-import { Badge, MessageSquare, ThumbsUp, User } from "lucide-react";
+import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
   Card,
   CardContent,
@@ -7,11 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
-import { useState } from "react";
+import { MessageSquare, ThumbsUp, User } from "lucide-react";
 import { STATUS_GROUPS } from "@/app/data/status-data";
-import { formatDistanceToNow } from "date-fns";
+import { Badge } from "./ui/badge";
 import { getCategoryDesign } from "@/app/data/category-data";
-import { Content } from "next/font/google";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 
@@ -24,7 +24,8 @@ export default function FeedbackList({
   userId: string | null;
 }) {
   const [posts, setPosts] = useState(initialPosts);
-  const handleVote = async (postId: number | string) => {
+
+  const handleVote = async (postId: number) => {
     if (!userId) {
       toast.error("Please sign in to vote on feedback");
       return;
@@ -34,44 +35,50 @@ export default function FeedbackList({
     const loadingToast = toast.loading("Submitting vote...");
 
     try {
-      const response = await fetch("/api/votes", {
+      const response = await fetch("/api/feedback/votes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ postId }),
+        body: JSON.stringify({
+          postId,
+        }),
       });
 
       if (!response.ok) {
         throw new Error("Vote failed");
       }
-
       const data = await response.json();
 
-      // Update UI optimistically / from response
-      setPosts((prevPosts) =>
-        prevPosts.map((post) => {
+      // Dismiss loading toast and show success
+      toast.dismiss(loadingToast);
+      toast.success(data.voted ? "Vote added!" : "Vote removed");
+
+      // Update local state
+      setPosts(
+        posts.map((post) => {
           if (post.id === postId) {
+            const voteCount = post.votes.length;
             return {
               ...post,
               votes: data.voted
-                ? [...post.votes, { userId, postId }]
+                ? [...post.votes, { userId }]
                 : post.votes.filter((v: any) => v.userId !== userId),
+              _count: {
+                votes: data.voted ? voteCount + 1 : voteCount - 1,
+              },
             };
           }
           return post;
         }),
       );
-
-      toast.dismiss(loadingToast);
-      toast.success(data.voted ? "Vote added!" : "Vote removed!");
     } catch (error) {
-      console.error(error);
+      console.error("Failed to submit vote.", error);
+      // Dismiss loading toast and show success
       toast.dismiss(loadingToast);
-      toast.error("Failed to submit. Please try again.");
+      toast.error("Failed to submit vote. Please try again");
     }
   };
-
   return (
     <div className="space-y-4">
       {posts.map((post) => (
@@ -86,7 +93,7 @@ export default function FeedbackList({
                 <CardDescription className="flex items-center gap-1.5 mt-1">
                   <User className="h-3 w-3" />
                   {post.author.name}
-                  <span>•</span>
+                  <span>|</span>
                   <span className="whitespace-nowrap">
                     {formatDistanceToNow(new Date(post.createdAt), {
                       addSuffix: true,
@@ -104,7 +111,7 @@ export default function FeedbackList({
 
                   return (
                     <Badge
-                      className={`${statusGroup.countColor} border ${statusGroup.color}`}
+                      className={`${statusGroup.countColor} border ${statusGroup.color} flex items-center gap-1`}
                     >
                       <StatusIcon className="h-3 w-3" />
                       {statusGroup.title}
@@ -118,7 +125,7 @@ export default function FeedbackList({
 
                   return (
                     <Badge
-                      fontVariant="outline"
+                      variant="outline"
                       className={`text-xs ${design.border} ${design.text} flex items-center gap-1`}
                     >
                       <Icon className="h-3 w-3" />
@@ -147,11 +154,9 @@ export default function FeedbackList({
                 />
                 {post.votes.length} Votes
               </Button>
-              <div>
-                <div className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 cursor-pointer">
-                  <MessageSquare className="h-4 w-4" />
-                  Comment
-                </div>
+              <div className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                <MessageSquare className="h-4 w-4" />
+                Comment
               </div>
             </div>
           </CardContent>
