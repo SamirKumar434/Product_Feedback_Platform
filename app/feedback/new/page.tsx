@@ -64,7 +64,7 @@ async function submitFeedback(
 export default function NewFeedbackPage() {
   const router = useRouter();
   const [state, action, isPending] = useActionState(submitFeedback, {
-    sucess: "false",
+    success: false,
     error: "",
   });
   useEffect(() => {
